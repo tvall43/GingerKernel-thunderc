@@ -50,16 +50,9 @@
 #include <mach/board_lge.h>
 #include "../devices.h"
 #include "../pm.h"
-/* LGE_CHANGE [james.jang@lge.com] 2010-07-06 */
-#include <mach/lg_pcb_version.h>
 #include <mach/socinfo.h>
 /* setting board revision information */
 int lge_bd_rev;
-
-/* LGE_CHANGE_S [james.jang@lge.com] 2010-07-06, only LS670 */
-#if 0
-static char *rev_str[LGE_REV_TOT_NUM] =
-{ "evb", "rev_a", "rev_b", "rev_c", "rev_d", "rev_e", "rev_10"};
 
 static int __init board_revno_setup(char *rev_info)
 {
@@ -78,83 +71,6 @@ static int __init board_revno_setup(char *rev_info)
 
 	return 1;
 }
-#else
-/*
-    PCB_REVISION_UNKOWN = 0,
-    PCB_REVISION_A = 1,
-    PCB_REVISION_B = 2,
-    PCB_REVISION_C = 3,
-    PCB_REVISION_D = 4,
-    PCB_REVISION_E = 5,
-    PCB_REVISION_F= 6,
-    PCB_REVISION_G = 7,
-    PCB_REVISION_1P0 = 8,
-    PCB_REVISION_1P1 = 9,
-    PCB_REVISION_1P2 = 10,
-    PCB_REVISION_1P3 = 11,
-    PCB_REVISION_1P4 = 12,
-    PCB_REVISION_1P5 = 13,
-    PCB_REVISION_1P7 = 14,
-*/
-static int __init board_revno_setup(char *rev_info)
-{
-	char pcb_version[10];
-	
-	lge_bd_rev = (int)simple_strtol(rev_info, NULL, 10);
-
-	switch(lge_bd_rev)			
-	{
-		case HW_PCB_REV_A: 				
-			strcpy(pcb_version, "A");
-			break;
-		case HW_PCB_REV_B: 
-			strcpy(pcb_version, "B");
-		    break;
-		case HW_PCB_REV_C: 	
-			strcpy(pcb_version, "C");
-			 break;
-		case HW_PCB_REV_D: 
-			strcpy(pcb_version, "D");
-			 break;
-		case HW_PCB_REV_E: 	
-			strcpy(pcb_version, "E");
-			 break;
-		case HW_PCB_REV_F:
-			strcpy(pcb_version, "F");
-			 break;
-		case HW_PCB_REV_G:
-			strcpy(pcb_version, "G");
-			 break;
-		case HW_PCB_REV_10:
-			strcpy(pcb_version, "1.0");
-			 break;
-		case HW_PCB_REV_11:	
-			strcpy(pcb_version, "1.1");
-			 break;
-		case HW_PCB_REV_12:
-			strcpy(pcb_version, "1.2");
-			 break;
-		case HW_PCB_REV_13:
-			strcpy(pcb_version, "1.3");
-			 break;
-		case HW_PCB_REV_14:	
-			strcpy(pcb_version, "1.4");
-			 break;
-		case HW_PCB_REV_15:	
-			strcpy(pcb_version, "1.5");
-			 break;
-		case HW_PCB_REV_16:	
-			strcpy(pcb_version, "1.6");
-			 break;
-		default:	
-			strcpy(pcb_version, "Unknown");
-			 break;
-	}
-	printk(KERN_INFO"BOARD: H/W revision = %s\n", pcb_version);
-  return 1;
-}
-#endif
-/* LGE_CHANGE_E [james.jang@lge.com] 2010-07-06 */
 
 __setup("lge.rev=", board_revno_setup);
 
@@ -244,7 +160,7 @@ static int msm_fb_detect_panel(const char *name)
 	int ret = -EPERM;
 
 	if (machine_is_msm7x25_ffa() || machine_is_msm7x27_ffa()) {
-		if (!strcmp(name, "lcdc_gordon_hvga"))
+		if (!strcmp(name, "lcdc_gordon_vga"))
 			ret = 0;
 		else
 			ret = -ENODEV;
@@ -312,74 +228,87 @@ void __init msm_add_fb_device(void)
 
 /* setting kgsl device */
 #ifdef CONFIG_ARCH_MSM7X27
-static struct resource kgsl_resources[] = {
-	{
-		.name = "kgsl_reg_memory",
-		.start = 0xA0000000,
-		.end = 0xA001ffff,
-		.flags = IORESOURCE_MEM,
-	},
-	{
-		.name   = "kgsl_phys_memory",
-		.start = 0,
-		.end = 0,
-		.flags = IORESOURCE_MEM,
-	},
-	{
-		.name = "kgsl_yamato_irq",
-		.start = INT_GRAPHICS,
-		.end = INT_GRAPHICS,
-		.flags = IORESOURCE_IRQ,
-	},
+static struct resource kgsl_3d0_resources[] = {
+         {
+                 .name = KGSL_3D0_REG_MEMORY,
+                 .start = 0xA0000000,
+                 .end = 0xA001ffff,
+                 .flags = IORESOURCE_MEM,
+         },
+         {
+                 .name = KGSL_3D0_IRQ,
+                 .start = INT_GRAPHICS,
+                 .end = INT_GRAPHICS,
+                 .flags = IORESOURCE_IRQ,
+         },
 };
 
-static struct kgsl_platform_data kgsl_pdata;
-
-static struct platform_device msm_device_kgsl = {
-	.name = "kgsl",
-	.id = -1,
-	.num_resources = ARRAY_SIZE(kgsl_resources),
-	.resource = kgsl_resources,
-	.dev = {
-		.platform_data = &kgsl_pdata,
+static struct kgsl_device_platform_data kgsl_3d0_pdata = {
+	.pwr_data = {
+	.pwrlevel = {
+		   	{
+			.gpu_freq = 128000000,
+                        .bus_freq = 128000000,
+			},
 	},
+	.init_level = 0,
+	.num_levels = 1,
+	.set_grp_async = NULL,
+	.idle_timeout = HZ/5,
+	.nap_allowed = true,
+	},
+	.clk = {
+	.name = {
+	.clk = "grp_clk",
+	.pclk = "grp_pclk",
+	},
+     },
+	.imem_clk_name = {
+	.clk = "imem_clk",
+	.pclk = NULL,
+	},
+	};
+
+
+struct platform_device msm_kgsl_3d0 = {
+         .name = "kgsl-3d0",
+         .id = 0,
+         .num_resources = ARRAY_SIZE(kgsl_3d0_resources),
+         .resource = kgsl_3d0_resources,
+         .dev = {
+                 .platform_data = &kgsl_3d0_pdata,
+         },
 };
 
 void __init msm_add_kgsl_device(void) 
 {
-	/* Initialize the page for barriers and cache ops */
-	map_page_strongly_ordered();
 	/* This value has been set to 160000 for power savings. */
 	/* OEMs may modify the value at their discretion for performance */
 	/* The appropriate maximum replacement for 160000 is: */
 	/* clk_get_max_axi_khz() */
-	kgsl_pdata.high_axi_3d = 160000;
+	//kgsl_pdata.high_axi_3d = 160000;
 
 	/* 7x27 doesn't allow graphics clocks to be run asynchronously to */
 	/* the AXI bus */
-	kgsl_pdata.max_grp2d_freq = 0;
-	kgsl_pdata.min_grp2d_freq = 0;
-	kgsl_pdata.set_grp2d_async = NULL;
-	kgsl_pdata.max_grp3d_freq = 0;
-	kgsl_pdata.min_grp3d_freq = 0;
-	kgsl_pdata.set_grp3d_async = NULL;
-	kgsl_pdata.imem_clk_name = "imem_clk";
-	kgsl_pdata.grp3d_clk_name = "grp_clk";
-	kgsl_pdata.grp3d_pclk_name = "grp_pclk";
-	kgsl_pdata.grp2d0_clk_name = NULL;
-	kgsl_pdata.idle_timeout_3d = HZ/5;
-	kgsl_pdata.idle_timeout_2d = 0;
+	//kgsl_pdata.max_grp2d_freq = 0;
+	//kgsl_pdata.min_grp2d_freq = 0;
+	//kgsl_pdata.set_grp2d_async = NULL;
+	//kgsl_pdata.max_grp3d_freq = 0;
+	//kgsl_pdata.min_grp3d_freq = 0;
+	//kgsl_pdata.set_grp3d_async = NULL;
+	//kgsl_pdata.imem_clk_name = "imem_clk";
+	//kgsl_pdata.grp3d_clk_name = "grp_clk";
+	//kgsl_pdata.grp3d_pclk_name = "grp_pclk";
+	//kgsl_pdata.grp2d0_clk_name = NULL;
+	//kgsl_pdata.idle_timeout_3d = HZ/5;
+	//kgsl_pdata.idle_timeout_2d = 0;
 
-#ifdef CONFIG_KGSL_PER_PROCESS_PAGE_TABLE
-	kgsl_pdata.pt_va_size = SZ_32M;
-	/* Maximum of 32 concurrent processes */
-	kgsl_pdata.pt_max_count = 32;
-#else
-	kgsl_pdata.pt_va_size = SZ_128M;
-	/* We only ever have one pagetable for everybody */
-	kgsl_pdata.pt_max_count = 1;
-#endif
-	platform_device_register(&msm_device_kgsl);
+//#ifdef CONFIG_KGSL_PER_PROCESS_PAGE_TABLE
+//	kgsl_pdata.pt_va_size = SZ_32M;
+//#else
+//	kgsl_pdata.pt_va_size = SZ_128M;
+//#endif
+	platform_device_register(&msm_kgsl_3d0);
 }
 #endif
 
@@ -404,7 +333,7 @@ static struct android_pmem_platform_data android_pmem_pdata = {
 static struct android_pmem_platform_data android_pmem_adsp_pdata = {
 	.name = "pmem_adsp",
 	.allocator_type = PMEM_ALLOCATORTYPE_BITMAP,
-	.cached = 0,
+	.cached = 1,
 };
 
 static struct android_pmem_platform_data android_pmem_audio_pdata = {
@@ -483,11 +412,6 @@ static int __init fb_size_setup(char *p)
 	return 0;
 }
 early_param("pmem_fb_size", fb_size_setup);
-// LGE_CHANGE_S [dojip.kim@lge.com] 2010-08-06, lge_mtd_direct_access
-#ifdef CONFIG_MACH_MSM7X27_THUNDERC
-extern void *lge_mtd_direct_access_addr;
-#endif
-// LGE_CHANGE_E [dojip.kim@lge.com] 2010-08-06
 
 void __init msm_msm7x2x_allocate_memory_regions(void)
 {
@@ -536,6 +460,7 @@ void __init msm_msm7x2x_allocate_memory_regions(void)
 		pr_info("allocating %lu bytes at %p (%lx physical) for kernel"
 				" ebi1 pmem arena\n", size, addr, __pa(addr));
 	}
+/*
 #ifdef CONFIG_ARCH_MSM7X27
 	size = MSM_GPU_PHYS_SIZE;
 	addr = alloc_bootmem(size);
@@ -544,13 +469,7 @@ void __init msm_msm7x2x_allocate_memory_regions(void)
 	pr_info("allocating %lu bytes at %p (at %lx physical) for KGSL\n",
 			size, addr, __pa(addr));
 #endif
-
-	// LGE_CHANGE_S [dojip.kim@lge.com] 2010-08-06, lge_mtd_direct_access
-#ifdef CONFIG_MACH_MSM7X27_THUNDERC
-	// PAGE_NUM_PER_BLK*PAGE_SIZE_BYTE
-	lge_mtd_direct_access_addr = alloc_bootmem(64*2048);
-#endif
-	// LGE_CHANGE_E [dojip.kim@lge.com] 2010-08-06
+*/
 }
 
 void __init msm_add_pmem_devices(void)
@@ -767,6 +686,28 @@ __WEAK struct platform_device acm_device = {
 };
 #endif
 
+#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
+/* LGE_CHANGE
+ * Add platform data and device for cdrom storage function.
+ * It will be used in Autorun feature.
+ * 2011-03-02, hyunhui.park@lge.com
+ */
+__WEAK struct usb_cdrom_storage_platform_data cdrom_storage_pdata = {
+	.nluns		= 1,
+	.vendor		= "Qualcomm Incorporated",
+	.product    = "CDROM storage",
+	.release	= 0x0100,
+};
+
+__WEAK struct platform_device usb_cdrom_storage_device = {
+	.name	= "usb_cdrom_storage",
+	.id	= -1,
+	.dev	= {
+		.platform_data = &cdrom_storage_pdata,
+	},
+};
+#endif
+
 __WEAK struct android_usb_platform_data android_usb_pdata = {
 	.vendor_id	= 0x05C6,
 	.product_id	= 0x9026,
@@ -898,7 +839,9 @@ static int hsusb_rpc_connect(int connect)
 	else
 		return msm_hsusb_rpc_close();
 }
+#endif
 
+#ifdef CONFIG_USB_MSM_OTG_72K
 struct vreg *vreg_3p3;
 static int msm_hsusb_ldo_init(int init)
 {
@@ -920,26 +863,6 @@ static int msm_hsusb_ldo_init(int init)
 	}
 
 	return 0;
-}
-
-static int msm_hsusb_ldo_enable(int enable)
-{
-	static int ldo_status;
-
-	if (!vreg_3p3 || IS_ERR(vreg_3p3))
-		return -ENODEV;
-
-	if (ldo_status == enable)
-		return 0;
-
-	ldo_status = enable;
-
-	pr_info("%s: %d", __func__, enable);
-
-	if (enable)
-		return vreg_enable(vreg_3p3);
-
-	return vreg_disable(vreg_3p3);
 }
 
 static int msm_hsusb_pmic_notif_init(void (*callback)(int online), int init)
@@ -977,8 +900,8 @@ static struct msm_otg_platform_data msm_otg_pdata = {
 	.vbus_power = msm_hsusb_vbus_power,
 #endif
 	.ldo_init       = msm_hsusb_ldo_init,
-	.ldo_enable     = msm_hsusb_ldo_enable,
-	.pclk_required_during_lpm = 1
+	.pclk_required_during_lpm = 1,
+	.pclk_src_name  = "ebi1_usb_clk",
 };
 
 #ifdef CONFIG_USB_GADGET
@@ -1014,12 +937,37 @@ static struct platform_device *usb_devices[] __initdata = {
 #ifdef CONFIG_USB_ANDROID_DIAG
 	&usb_diag_device,
 #endif
+#ifdef CONFIG_USB_SUPPORT_LGE_ANDROID_AUTORUN
+	/* LGE_CHANGE
+	 * Add platform data and device for cdrom storage function.
+	 * It will be used in Autorun feature.
+	 * 2011-03-02, hyunhui.park@lge.com
+	 */
+	&usb_cdrom_storage_device,
+#endif
 	&android_usb_device,
 #endif
 };
 
+static void usb_mpp_init(void)
+{
+	unsigned rc;
+	unsigned mpp_usb = 7;
+
+	if (machine_is_msm7x25_ffa() || machine_is_msm7x27_ffa()) {
+		rc = mpp_config_digital_out(mpp_usb,
+				MPP_CFG(MPP_DLOGIC_LVL_VDD,
+					MPP_DLOGIC_OUT_CTRL_HIGH));
+		if (rc)
+			pr_err("%s: configuring mpp pin"
+					"to enable 3.3V LDO failed\n", __func__);
+	}
+}
+
 void __init msm_add_usb_devices(void) 
 {
+	usb_mpp_init();
+
 #ifdef CONFIG_USB_FUNCTION
 	msm_hsusb_pdata.swfi_latency =
 		msm7x27_pm_data
@@ -1030,6 +978,20 @@ void __init msm_add_usb_devices(void)
 
 #ifdef CONFIG_USB_MSM_OTG_72K
 	msm_device_otg.dev.platform_data = &msm_otg_pdata;
+	if (machine_is_msm7x25_surf() || machine_is_msm7x25_ffa()) {
+		msm_otg_pdata.pemp_level =
+			PRE_EMPHASIS_WITH_20_PERCENT;
+		msm_otg_pdata.drv_ampl = HS_DRV_AMPLITUDE_5_PERCENT;
+		msm_otg_pdata.cdr_autoreset = CDR_AUTO_RESET_ENABLE;
+		msm_otg_pdata.phy_reset = msm_otg_rpc_phy_reset;
+	}
+	if (machine_is_msm7x27_surf() || machine_is_msm7x27_ffa()) {
+		msm_otg_pdata.pemp_level =
+			PRE_EMPHASIS_WITH_10_PERCENT;
+		msm_otg_pdata.drv_ampl = HS_DRV_AMPLITUDE_5_PERCENT;
+		msm_otg_pdata.cdr_autoreset = CDR_AUTO_RESET_DISABLE;
+		msm_otg_pdata.phy_reset_sig_inverted = 1;
+	}
 
 #ifdef CONFIG_USB_GADGET
 	msm_otg_pdata.swfi_latency =

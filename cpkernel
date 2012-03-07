@@ -3,7 +3,9 @@ echo "*** Cleaning directories ***"
 rm ../kernel/*
 rm ../system/lib/modules/*
 echo "*** Copying modules ***"
+cp drivers/net/wireless/libra/librasdioif.ko ../system/lib/modules/
 cp drivers/net/wireless/bcm4325/wireless.ko ../system/lib/modules/
+cp drivers/net/tun.ko ../system/lib/modules/
 echo "*** Copying kernel ***"
 cp arch/arm/boot/zImage ../kernel/
 echo "*** DONE! ***"

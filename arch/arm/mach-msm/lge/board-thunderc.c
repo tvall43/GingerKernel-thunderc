@@ -72,6 +72,18 @@
 #endif
 #include <mach/board_lge.h>
 
+#ifdef CONFIG_LGE_USB_GADGET_SUPPORT_FACTORY_USB
+#define LG_UNKNOWN_CABLE			0
+#define LG_WALL_CHARGER_CABLE		1
+#define LG_NORMAL_USB_CABLE			2
+#define LG_FACTORY_CABLE_56K_TYPE	3
+#define LG_FACTORY_CABLE_130K_TYPE	4
+#define LG_FACTORY_CABLE_910K_TYPE	5
+#define LG_RESERVED1_CABLE			6
+#define LG_RESERVED2_CABLE			7
+#define LG_NONE_CABLE				8
+#endif
+
 /* board-specific pm tuning data definitions */
 
 /* currently, below declaration code is blocked.
